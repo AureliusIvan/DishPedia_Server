@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
       - name: Generate application key
         run: php artisan key:generate
 
@@ -43,6 +46,6 @@ jobs:
           local-dir: ./
           server-dir: /dishpedia.aureliusivan.my.id/
           args: --delete
-          env-file: ${{ secrets.ENV_FILE }}
+
       - name: Restart web server
         run: echo "Web server restarted"
