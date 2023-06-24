@@ -1,34 +1,48 @@
-name: CD
+name: Deploy
 
 on:
   push:
-    branches: [ production ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.PUSH_TOKEN }}
-    - name: Set up Node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.x'
-    - run: npm install
-    - run: npm run production
-    - name: Commit built assets
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git checkout -B deploy
-        git add -f public/
-        git commit -m "Build front-end assets"
-        git push -f origin deploy
-    - name: Deploy to production
-      uses: appleboy/ssh-action@master
-      with:
-        username: ${{ secrets.SSH_USERNAME }}
-        host: ${{ secrets.SSH_HOST }}
-        password: ${{ secrets.SSH_PASSWORD }}
-        script: 'cd /var/www/html && ./server_deploy.sh'
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+
+      - name: Clear caches
+        run: |
+          php artisan cache:clear
+          php artisan config:clear
+          php artisan route:clear
+          php artisan view:clear
+
+      - name: Deploy to hosting provider
+        uses: SamKirkland/FTP-Deploy-Action@3.x
+        with:
+          server: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          local-dir: ./
+          remote-dir: public_html/
+          args: --delete
+
+      - name: Restart web server
+        run: echo "Web server restarted"
