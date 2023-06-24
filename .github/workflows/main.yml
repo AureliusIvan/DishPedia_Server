@@ -35,13 +35,13 @@ jobs:
           php artisan view:clear
 
       - name: Deploy to hosting provider
-        uses: SamKirkland/FTP-Deploy-Action@3.x
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           local-dir: ./
-          remote-dir: public_html/
+          server-dir: /dishpedia.aureliusivan.my.id/
           args: --delete
 
       - name: Restart web server
